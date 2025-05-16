@@ -21,10 +21,8 @@ def get_date_range(selected: str) -> Tuple[datetime, datetime]:
 
 def show_download():
     st.title("📥 Download Expense History")
-    
-    # Use pathlib for better path handling
+
     file_path = Path("data") / "expenses.csv"
-    
     if not file_path.exists():
         st.warning("No expense data found.")
         return
@@ -33,7 +31,7 @@ def show_download():
         df = pd.read_csv(file_path)
         df["date"] = pd.to_datetime(df["date"], format="%d-%m-%Y", errors="coerce")
         df.dropna(subset=["date"], inplace=True)
-        
+
         st.subheader("Select Duration")
         selected = st.radio(
             "Choose a range",
@@ -44,11 +42,14 @@ def show_download():
 
         start_date, end_date = get_date_range(selected)
         filtered = df[(df["date"] >= pd.to_datetime(start_date)) & 
-                     (df["date"] <= pd.to_datetime(end_date))]
+                      (df["date"] <= pd.to_datetime(end_date))]
 
         if filtered.empty:
             max_available = df["date"].max()
-            st.info(f"No data found in selected range. Data till {max_available.strftime('%d-%m-%Y')} available.")
+            if pd.isna(max_available):
+                st.info("No valid date found in the dataset.")
+            else:
+                st.info(f"No data found in selected range. Data till {max_available.strftime('%d-%m-%Y')} available.")
         else:
             st.table(filtered[["date", "category", "amount"]])
             csv = filtered.to_csv(index=False).encode("utf-8")
